@@ -37,7 +37,6 @@ namespace HueAutomation
 
         public async Task SampleFullSpectrum()
         {
-            double[] xyz = new double[3];
             var lightIds = await GetLightIds();
             var converter = new ColorConverter();
             var command = new LightCommand();
@@ -56,7 +55,6 @@ namespace HueAutomation
 
         public async Task SamplePoints()
         {
-            double[] xyz = new double[3];
             var lightIds = await GetLightIds();
             var converter = new ColorConverter();
             var command = new LightCommand();
@@ -79,7 +77,6 @@ namespace HueAutomation
 
         public async Task Compare()
         {
-            double[] xyz = new double[3];
             var lightIds = await GetLightIds();
             var converter = new ColorConverter();
 
