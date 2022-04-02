@@ -1,0 +1,9 @@
+{
+    "BridgeIp": "192.168.0.1",
+    "AppKey": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+    "WeatherApiKey": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+    "Lights": [
+        "Couch Lamp",
+        "Bedroom Lamp"
+    ]
+}
