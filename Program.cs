@@ -15,8 +15,11 @@ namespace HueAutomation
             var weatherApiKey = config.GetValue<string>("WeatherApiKey");
             var lights = config.GetSection("Lights").Get<List<string>>();
 
+            var latitude = config.GetValue<double>("Latitude");
+            var longitude = config.GetValue<double>("Latitude");
+
             var bridge = new BridgeControl(bridgeIp, appKey, lights);
-            var weather = new WeatherApi(weatherApiKey);
+            var weather = new WeatherApi(weatherApiKey, latitude, longitude);
 
             while (true)
             {

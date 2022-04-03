@@ -7,14 +7,16 @@ namespace HueAutomation
 {
     public class WeatherApi
     {
-        public WeatherApi(string apiKey)
+        public WeatherApi(string apiKey, double latitude, double longitude)
         {
             Key = apiKey;
+            Latitude = latitude;
+            Longitude = longitude;
         }
         public string Key { get; }
         public string Uri { get; } = "https://api.openweathermap.org/data/2.5/weather";
-        public double Latitude { get; set; } = 40.7401448589323;
-        public double Longitude { get; set; } = -73.98008788063056;
+        public double Latitude { get; }
+        public double Longitude { get; }
 
         public async Task<double> GetCurrentTemperature()
         {

@@ -2,6 +2,8 @@
     "BridgeIp": "192.168.0.1",
     "AppKey": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
     "WeatherApiKey": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+    "Latitude": 0,
+    "Longitude": 0,
     "Lights": [
         "Couch Lamp",
         "Bedroom Lamp"
