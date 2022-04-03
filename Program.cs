@@ -20,9 +20,19 @@ namespace HueAutomation
 
             while (true)
             {
-                double temp = await weather.GetCurrentTemperature();
-                await bridge.SetColorFromTemperature(temp);
-                await Task.Delay(TimeSpan.FromMinutes(5));
+                try 
+                {
+                    double temp = await weather.GetCurrentTemperature();
+                    await bridge.SetColorFromTemperature(temp);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+                finally
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(5));
+                }
             }
         }
     }

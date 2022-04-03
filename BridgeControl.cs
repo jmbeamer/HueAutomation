@@ -33,6 +33,8 @@ namespace HueAutomation
             var color = converter.TemperatureToXyz(temperature);
             command.SetColor(color.x, color.y);
             var result = await Client.SendCommandAsync(command, lightIds);
+
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm")} -- {temperature}");
         }
 
         public async Task SampleFullSpectrum()
