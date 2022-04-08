@@ -1,120 +1,85 @@
 using Q42.HueApi;
-using Q42.HueApi.Models;
-using cc = Q42.HueApi.ColorConverters;
-using Q42.HueApi.ColorConverters.Gamut;
 using Q42.HueApi.Interfaces;
-using Q42.HueApi.Models.Gamut;
-using HueAutomation;
+using Q42.HueApi.Models.Groups;
+using Microsoft.Extensions.Configuration;
 
 namespace HueAutomation
 {
     public class BridgeControl
     {
-        public BridgeControl(string ipAddress, string appKey, IEnumerable<string> lightNames)
+        public BridgeControl(IConfigurationSection config)
         {
-            BridgeIp = ipAddress;
-            AppKey = appKey;
-            LightNames = lightNames.ToList();
+            BridgeIp = config.GetValue<string>("IP");
+            AppKey = config.GetValue<string>("AppKey");
+            Client = new LocalHueClient(BridgeIp,AppKey);
         }
+        private Dictionary<string,Light> _lights;
         private int Max { get; set; } = 100;
         private int Min { get; set; } = 0;
         private string BridgeIp { get; }
         private string AppKey { get; }
-        private List<string> LightNames { get; }
-        private ILocalHueClient _client;
-        private ILocalHueClient Client => _client ?? (_client = new LocalHueClient(BridgeIp,AppKey));
-
-        public async Task SetColorFromTemperature(double temperature)
+        private ILocalHueClient Client { get; }
+        private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
+        public async Task<HueResults> SendCommand(LightCommand command, IEnumerable<string> lightNames)
         {
-            var lightIds = await GetLightIds();
-            var converter = new ColorConverter();
-            var command = new LightCommand();
-            
-            var color = converter.TemperatureToXyz(temperature);
-            command.SetColor(color.x, color.y);
-            var result = await Client.SendCommandAsync(command, lightIds);
-
-            Console.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm")} -- {temperature}");
-        }
-
-        public async Task SampleFullSpectrum()
-        {
-            var lightIds = await GetLightIds();
-            var converter = new ColorConverter();
-            var command = new LightCommand();
-
-            for (int i = 0; i <= 1000; i++)
+            try 
             {
-                var temp = i / 10.0;
-                var color = converter.TemperatureToXyz(temp);
-                Console.WriteLine($"{temp}: ({color.x}, {color.y})");
-                command.SetColor(color.x, color.y);
-                var result = await Client.SendCommandAsync(command, lightIds);
-
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
+                await _semaphore.WaitAsync();
+                var ids = await GetLightIds(lightNames);
+                return await Client.SendCommandAsync(command, ids);
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
-
-        public async Task SamplePoints()
+        public async Task Pulsate(IEnumerable<string> lightNames) // (double r, double g, double b)
         {
-            var lightIds = await GetLightIds();
-            var converter = new ColorConverter();
-            var command = new LightCommand();
-
-            for (int i = 0; i <= 100; i++)
+            try 
             {
-                var temp = i;
-                var color = converter.TemperatureToXyz(temp);
-                Console.WriteLine($"{temp}: ({color.x}, {color.y})");
-                command.SetColor(color.x, color.y);
-                var result = await Client.SendCommandAsync(command, lightIds);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
+                await _semaphore.WaitAsync();
+                var color = ColorConverter.RgbToXyz((0.0, 48.0, 135.0));
 
-                if (i % 10 == 0)
+                TimeSpan transition = TimeSpan.FromSeconds(2);
+                int repititions = 5;
+                var ids = await GetLightIds(lightNames);
+                var command = new LightCommand();
+
+                for (int i = 0; i < repititions; i++)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(2));
+                    command.BrightnessIncrement = 150;
+                    command.TransitionTime = transition;
+                    command.SetColor(color.x,color.y);
+                    await Client.SendCommandAsync(command, ids);
+                    await Task.Delay(transition);
+
+                    command.BrightnessIncrement = -150;
+                    command.TransitionTime = transition;
+                    await Client.SendCommandAsync(command, ids);
+                    await Task.Delay(transition);
                 }
             }
-        }
-
-        public async Task Compare()
-        {
-            var lightIds = await GetLightIds();
-            var converter = new ColorConverter();
-
-            for (int temp = 0; temp <= 100; temp += 10)
+            finally
             {
-                var rgb = converter.TemperatureToRgb_3Seg(temp);
-                var color = converter.RgbToXyz(rgb);
-                Console.WriteLine($"{temp}: ({color.x}, {color.y})");
-
-                var command = new LightCommand();
-                command.SetColor(color.x, color.y);
-                var result = await Client.SendCommandAsync(command, lightIds);
-
-                await Task.Delay(TimeSpan.FromSeconds(5));
-
-
-                rgb = converter.TemperatureToRgb_4Seg(temp);
-                color = converter.RgbToXyz(rgb);
-                Console.WriteLine($"{temp}: ({color.x}, {color.y})");
-
-                command = new LightCommand();
-                command.SetColor(color.x, color.y);
-                result = await Client.SendCommandAsync(command, lightIds);
-
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                _semaphore.Release();
             }
         }
-        private async Task<List<string>> GetLightIds()
+        private async Task<List<string>> GetLightIds(IEnumerable<string> lightNames)
         { 
-            var bridge = await Client.GetBridgeAsync();
-            var lights = bridge.Lights
-                               .Where(l => LightNames.Contains(l.Name))
-                               .Select(l => l.Id)
-                               .ToList();
-            return lights;
+            if (_lights == null)
+            {
+                var bridge = await Client.GetBridgeAsync();
+                _lights = bridge.Lights.ToDictionary(l => l.Name, l => l);
+            }
+            var ids = new List<string>();
+            foreach (var name in lightNames)
+            {
+                if (_lights.TryGetValue(name, out Light light))
+                {
+                    ids.Add(light.Id);
+                }
+            }
+            return ids;
         }
-        
     }
 }
