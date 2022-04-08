@@ -1,11 +1,27 @@
 {
-    "BridgeIp": "192.168.0.1",
-    "AppKey": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
-    "WeatherApiKey": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
-    "Latitude": 0,
-    "Longitude": 0,
-    "Lights": [
-        "Couch Lamp",
-        "Bedroom Lamp"
-    ]
+    "Bridge": {
+        "IP": "192.168.0.1",
+        "AppKey": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+    },
+    "Weather":{
+        "ApiKey": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+        "Latitude": 0,
+        "Longitude": 0,
+        "Lights": [
+            "Couch Lamp",
+            "Bedroom Lamp"
+        ]
+    },
+    "Baseball":{
+        "Team": "NYY",
+        "Color":{
+            "R":0,
+            "G":48,
+            "B":135
+        },
+        "Lights": [
+            "Couch Lamp",
+            "Bedroom Lamp"
+        ]
+    }
 }

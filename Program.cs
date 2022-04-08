@@ -10,23 +10,28 @@ namespace HueAutomation
                 .AddJsonFile("appsettings.json")
                 .Build();
 
-            var bridgeIp = config.GetValue<string>("BridgeIp");
-            var appKey = config.GetValue<string>("AppKey");
-            var weatherApiKey = config.GetValue<string>("WeatherApiKey");
-            var lights = config.GetSection("Lights").Get<List<string>>();
+            var lights = new List<string>(){
+                "Couch Lamp"
+            };
 
-            var latitude = config.GetValue<double>("Latitude");
-            var longitude = config.GetValue<double>("Latitude");
+            var bridge = new BridgeControl(config.GetSection("Bridge"));
+            await bridge.Pulsate(lights);
+        }
+        private async Task TemperatureTracker(IConfiguration config, BridgeControl bridge)
+        {
+            var weather = new WeatherApi(config.GetSection("Weather"), bridge);
 
-            var bridge = new BridgeControl(bridgeIp, appKey, lights);
-            var weather = new WeatherApi(weatherApiKey, latitude, longitude);
-
+            int startup = 0;
             while (true)
             {
                 try 
                 {
-                    double temp = await weather.GetCurrentTemperature();
-                    await bridge.SetColorFromTemperature(temp);
+                    var result = await weather.SetColorFromTemperature();
+                    if (result.HasErrors())
+                    {
+                        // some seriously robust logging here
+                        Console.WriteLine(result.ToString());
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -34,7 +39,15 @@ namespace HueAutomation
                 }
                 finally
                 {
-                    await Task.Delay(TimeSpan.FromMinutes(5));
+                    if (startup < 5)
+                    {
+                        await Task.Delay(TimeSpan.FromMinutes(1));
+                        startup++;
+                    }
+                    else
+                    {
+                        await Task.Delay(TimeSpan.FromMinutes(5));
+                    }
                 }
             }
         }
